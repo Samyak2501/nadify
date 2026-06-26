@@ -2637,11 +2637,9 @@
   <script>
     const $ = id => document.getElementById(id);
 
-    const DEFAULT_SERVER = (window.location.protocol === 'http:' || window.location.protocol === 'https:') && 
-                           !window.location.hostname.includes('netlify.app') && 
-                           !window.location.hostname.includes('github.io')
-      ? window.location.origin
-      : 'http://localhost:3001';
+    const DEFAULT_SERVER = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:3001'
+      : 'https://nadify-backend-production.up.railway.app';
 
     const Storage = {
       get: (key, fallback = null) => {
