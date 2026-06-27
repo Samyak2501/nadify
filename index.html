@@ -2836,6 +2836,40 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    let marqueeStyleSheet = null;
+    let marqueeUidCounter = 0;
+
+    function addDynamicMarqueeRule(name, distance) {
+      if (!marqueeStyleSheet) {
+        const style = document.createElement('style');
+        style.id = 'marquee-dynamic-styles';
+        document.head.appendChild(style);
+        marqueeStyleSheet = style.sheet;
+      }
+      
+      // Check if rule already exists and delete it
+      for (let i = 0; i < marqueeStyleSheet.cssRules.length; i++) {
+        const rule = marqueeStyleSheet.cssRules[i];
+        if (rule.type === CSSRule.KEYFRAMES_RULE && rule.name === name) {
+          marqueeStyleSheet.deleteRule(i);
+          break;
+        }
+      }
+      
+      // Insert the new keyframe rule (0-10% start pause, 45-55% end pause, 90-100% start pause)
+      const ruleText = `
+        @keyframes ${name} {
+          0% { transform: translate3d(0, 0, 0); }
+          10% { transform: translate3d(0, 0, 0); }
+          45% { transform: translate3d(-${distance}px, 0, 0); }
+          55% { transform: translate3d(-${distance}px, 0, 0); }
+          90% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(0, 0, 0); }
+        }
+      `;
+      marqueeStyleSheet.insertRule(ruleText, marqueeStyleSheet.cssRules.length);
+    }
+
     function updateMarquees() {
       const isMobile = window.innerWidth <= 1024;
       const elements = document.querySelectorAll('.song-inner');
@@ -2844,10 +2878,8 @@
         const parent = inner.parentElement;
         if (!parent) return;
 
-        inner.classList.remove('marquee-active');
         parent.classList.remove('marquee-parent');
-        inner.style.removeProperty('--scroll-distance');
-        inner.style.removeProperty('--scroll-duration');
+        inner.style.animation = '';
 
         if (!isMobile) return;
 
@@ -2862,14 +2894,20 @@
           const buffer = 16; // Add a tiny safety padding for the right-hand scroll limits
           const totalDistance = scrollDistance + buffer;
           
-          inner.style.setProperty('--scroll-distance', `-${totalDistance}px`);
+          let animName = inner.getAttribute('data-marquee-anim');
+          if (!animName) {
+            marqueeUidCounter++;
+            animName = `marquee-uid-${marqueeUidCounter}`;
+            inner.setAttribute('data-marquee-anim', animName);
+          }
+          
+          addDynamicMarqueeRule(animName, totalDistance);
           
           // Speed: ~30 pixels per second. Minimum duration of 4.5 seconds for readability
           const duration = Math.max(4.5, totalDistance / 30);
-          inner.style.setProperty('--scroll-duration', `${duration}s`);
           
           parent.classList.add('marquee-parent');
-          inner.classList.add('marquee-active');
+          inner.style.animation = `${animName} ${duration}s linear infinite`;
         }
       });
     }
