@@ -542,13 +542,18 @@
       }
     }
 
-    .song.marquee-active,
-    .np-title.marquee-active,
-    .fs-title.marquee-active {
+    .song.marquee-parent,
+    .np-title.marquee-parent,
+    .fs-title.marquee-parent {
       text-overflow: clip !important;
-      overflow: visible !important;
-      display: inline-block !important;
-      text-align: left !important;
+    }
+
+    .song-inner {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .song-inner.marquee-active {
       animation: marquee var(--scroll-duration, 5s) linear infinite;
     }
 
@@ -2521,7 +2526,7 @@
       <div class="player-left">
         <img class="np-cover" id="npCover" src="" alt="" />
         <div class="np-info">
-          <div class="np-title" id="npTitle">—</div>
+          <div class="np-title" id="npTitle"><span class="song-inner">—</span></div>
           <div class="np-artist" id="npArtist">—</div>
         </div>
       </div>
@@ -2623,7 +2628,7 @@
         </div>
 
         <div class="fs-info">
-          <div class="fs-title" id="fsTitle">—</div>
+          <div class="fs-title" id="fsTitle"><span class="song-inner">—</span></div>
           <div class="fs-artist" id="fsArtist">—</div>
         </div>
       </div>
@@ -2832,34 +2837,39 @@
     }
 
     function updateMarquees() {
-      const isMobile = window.innerWidth <= 768;
-      const elements = document.querySelectorAll('.song, .np-title, .fs-title');
+      const isMobile = window.innerWidth <= 1024;
+      const elements = document.querySelectorAll('.song-inner');
       
-      elements.forEach(el => {
-        el.classList.remove('marquee-active');
-        el.style.removeProperty('--scroll-distance');
-        el.style.removeProperty('--scroll-duration');
+      elements.forEach(inner => {
+        const parent = inner.parentElement;
+        if (!parent) return;
+
+        inner.classList.remove('marquee-active');
+        parent.classList.remove('marquee-parent');
+        inner.style.removeProperty('--scroll-distance');
+        inner.style.removeProperty('--scroll-duration');
 
         if (!isMobile) return;
 
         // Skip hidden elements to avoid false scrollWidth calculations
-        if (el.getBoundingClientRect().width === 0) return;
+        if (parent.getBoundingClientRect().width === 0) return;
 
-        const scrollWidth = el.scrollWidth;
-        const clientWidth = el.clientWidth;
+        const innerWidth = inner.offsetWidth;
+        const parentWidth = parent.clientWidth;
 
-        if (scrollWidth > clientWidth) {
-          const scrollDistance = scrollWidth - clientWidth;
+        if (innerWidth > parentWidth) {
+          const scrollDistance = innerWidth - parentWidth;
           const buffer = 16; // Add a tiny safety padding for the right-hand scroll limits
           const totalDistance = scrollDistance + buffer;
           
-          el.style.setProperty('--scroll-distance', `-${totalDistance}px`);
+          inner.style.setProperty('--scroll-distance', `-${totalDistance}px`);
           
           // Speed: ~30 pixels per second. Minimum duration of 4.5 seconds for readability
           const duration = Math.max(4.5, totalDistance / 30);
-          el.style.setProperty('--scroll-duration', `${duration}s`);
+          inner.style.setProperty('--scroll-duration', `${duration}s`);
           
-          el.classList.add('marquee-active');
+          parent.classList.add('marquee-parent');
+          inner.classList.add('marquee-active');
         }
       });
     }
@@ -2944,7 +2954,7 @@
         <img class="cover" src="${image}" alt="${name}" loading="lazy" 
              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><rect fill=%22%232AABED15%22 width=%2280%22 height=%2280%22/><text x=%2240%22 y=%2248%22 text-anchor=%22middle%22 fill=%22%232AABED%22 font-size=%2232%22>♪</text></svg>'"/>
         <div class="card-body">
-          <div class="song" title="${name}">${name}</div>
+          <div class="song" title="${name}"><span class="song-inner">${name}</span></div>
           <div class="artist" title="${artist}">${artist}</div>
         </div>
         <div class="play-overlay">
@@ -3138,7 +3148,7 @@
         <img class="cover" src="${image}" alt="${name}" loading="lazy" 
              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><rect fill=%22%232AABED15%22 width=%2280%22 height=%2280%22/><text x=%2240%22 y=%2248%22 text-anchor=%22middle%22 fill=%22%232AABED%22 font-size=%2232%22>♪</text></svg>'"/>
         <div class="card-body">
-          <div class="song" title="${name}">${name}</div>
+          <div class="song" title="${name}"><span class="song-inner">${name}</span></div>
           <div class="artist" title="${artist}">${artist}</div>
         </div>
         <div class="play-overlay">
@@ -3459,7 +3469,7 @@
     function updateFullscreenUI() {
       $('fsCover').src = currentSongData.image || '';
       $('fsBg').style.backgroundImage = `url(${currentSongData.image || ''})`;
-      $('fsTitle').textContent = currentSongData.title || '—';
+      $('fsTitle').innerHTML = `<span class="song-inner">${currentSongData.title || '—'}</span>`;
       $('fsArtist').textContent = currentSongData.artist || '—';
       setTimeout(updateMarquees, 50);
     }
@@ -3554,7 +3564,7 @@
       openFullscreen();
 
       $('npCover').src = meta.image || '';
-      $('npTitle').textContent = meta.name || 'Loading...';
+      $('npTitle').innerHTML = `<span class="song-inner">${meta.name || 'Loading...'}</span>`;
       $('npArtist').innerHTML = `
         <div class="loading-bars">
           <span></span><span></span><span></span><span></span>
@@ -3604,7 +3614,7 @@
         const artist = data.artist || meta.artist;
         const image = data.image || meta.image;
 
-        $('npTitle').textContent = title;
+        $('npTitle').innerHTML = `<span class="song-inner">${title}</span>`;
         $('npArtist').textContent = artist;
         $('npCover').src = image;
 
@@ -3649,9 +3659,9 @@
         });
 
       } catch (e) {
-        $('npTitle').textContent = 'Error';
+        $('npTitle').innerHTML = `<span class="song-inner">Error</span>`;
         $('npArtist').textContent = e.message || 'Failed to load';
-        $('fsTitle').textContent = 'Error';
+        $('fsTitle').innerHTML = `<span class="song-inner">Error</span>`;
         $('fsArtist').textContent = e.message || 'Failed to load';
 
         if (card) {
