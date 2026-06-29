@@ -122,8 +122,8 @@ app.get('/top-songs', async (req, res) => {
     const resolved = await Promise.all(songPromises);
     const resolvedSongs = resolved.filter(s => s !== null);
 
-    // Slice to first 10 successful resolutions and map ranks sequentially from 1 to 10
-    const songs = resolvedSongs.slice(0, 10).map((song, index) => ({
+    // Slice to first 8 successful resolutions and map ranks sequentially from 1 to 8
+    const songs = resolvedSongs.slice(0, 8).map((song, index) => ({
       ...song,
       rank: index + 1
     }));
