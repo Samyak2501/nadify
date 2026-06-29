@@ -8,6 +8,11 @@
 
 ---
 
+## 🔗 Live Website
+Live website URL :- https://nadify.netlify.app/
+
+---
+
 ## ✨ Features
 
 - **Trending Charts**: Dynamic Spotify India Daily Top Chart integration, scraped and resolved automatically.
